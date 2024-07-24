@@ -1,8 +1,4 @@
-import type {
-	IClientDTO,
-	ICreateClientArgsDTO,
-	IUpdateClientArgsDTO
-} from '$lib/interfaces/client.interface';
+import type { IClientDTO } from '$lib/interfaces/client.interface';
 import type { IResponse } from '$lib/interfaces/response.interface';
 
 import axios from 'axios';
@@ -19,32 +15,10 @@ const axiosInstance = axios.create({
 	}
 });
 
-export const createClient = async (args: ICreateClientArgsDTO): Promise<IResponse<IClientDTO>> => {
-	try {
-		const response = await axiosInstance.post('/', args);
-
-		return response.data as IResponse<IClientDTO>;
-	} catch (error) {
-		return { code: httpCodes.INTERNAL_SERVER_ERROR, data: null, error: error as string };
-	}
-};
-
-export const updateClient = async (
-	id: number,
-	args: IUpdateClientArgsDTO
-): Promise<IResponse<IClientDTO>> => {
-	try {
-		const response = await axiosInstance.put(`/${id}`, args);
-		return response.data as IResponse<IClientDTO>;
-	} catch (error) {
-		return { code: httpCodes.INTERNAL_SERVER_ERROR, data: null, error: error as string };
-	}
-};
-
 export const getClientById = async (id: number): Promise<IResponse<IClientDTO>> => {
 	try {
 		const response = await axiosInstance.get(`/${id}`);
-		return response.data as IResponse<IClientDTO>;
+		return { code: response.status, data: response.data } as IResponse<IClientDTO>;
 	} catch (error) {
 		return { code: httpCodes.INTERNAL_SERVER_ERROR, data: null, error: error as string };
 	}
@@ -53,16 +27,7 @@ export const getClientById = async (id: number): Promise<IResponse<IClientDTO>> 
 export const getClients = async (): Promise<IResponse<IClientDTO[]>> => {
 	try {
 		const response = await axiosInstance.get('/');
-		return response.data as IResponse<IClientDTO[]>;
-	} catch (error) {
-		return { code: httpCodes.INTERNAL_SERVER_ERROR, data: null, error: error as string };
-	}
-};
-
-export const deleteClient = async (id: number): Promise<IResponse<void>> => {
-	try {
-		const response = await axiosInstance.delete(`/${id}`);
-		return response.data as IResponse<void>;
+		return { code: response.status, data: response.data } as IResponse<IClientDTO[]>;
 	} catch (error) {
 		return { code: httpCodes.INTERNAL_SERVER_ERROR, data: null, error: error as string };
 	}

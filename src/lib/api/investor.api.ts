@@ -1,7 +1,8 @@
 import type {
 	IInvestorDTO,
 	ICreateInvestorArgsDTO,
-	IUpdateInvestorArgsDTO
+	IUpdateInvestorArgsDTO,
+	ICompanyRealOwnersDTO
 } from '$lib/interfaces/investor.interface';
 import type { IResponse } from '$lib/interfaces/response.interface';
 
@@ -19,56 +20,6 @@ const axiosInstance = axios.create({
 	}
 });
 
-export const createInvestor = async (
-	args: ICreateInvestorArgsDTO
-): Promise<IResponse<IInvestorDTO>> => {
-	try {
-		const response = await axiosInstance.post('/', args);
-		return response.data as IResponse<IInvestorDTO>;
-	} catch (error) {
-		return { code: httpCodes.INTERNAL_SERVER_ERROR, data: null, error: error as string };
-	}
-};
-
-export const updateInvestor = async (
-	id: number,
-	args: IUpdateInvestorArgsDTO
-): Promise<IResponse<IInvestorDTO>> => {
-	try {
-		const response = await axiosInstance.put(`/${id}`, args);
-		return response.data as IResponse<IInvestorDTO>;
-	} catch (error) {
-		return { code: httpCodes.INTERNAL_SERVER_ERROR, data: null, error: error as string };
-	}
-};
-
-export const getInvestorById = async (id: number): Promise<IResponse<IInvestorDTO>> => {
-	try {
-		const response = await axiosInstance.get(`/${id}`);
-		return response.data as IResponse<IInvestorDTO>;
-	} catch (error) {
-		return { code: httpCodes.INTERNAL_SERVER_ERROR, data: null, error: error as string };
-	}
-};
-
-export const getInvestors = async (): Promise<IResponse<IInvestorDTO[]>> => {
-	try {
-		const response = await axiosInstance.get('/');
-		return response.data as IResponse<IInvestorDTO[]>;
-	} catch (error) {
-		return { code: httpCodes.INTERNAL_SERVER_ERROR, data: null, error: error as string };
-	}
-};
-
-export const deleteInvestor = async (id: number): Promise<IResponse<void>> => {
-	try {
-		const response = await axiosInstance.delete(`/${id}`);
-		return response.data as IResponse<void>;
-	} catch (error) {
-		return { code: httpCodes.INTERNAL_SERVER_ERROR, data: null, error: error as string };
-	}
-};
-
 export const saveCompanyInvestors = async (
 	companyId: number,
 	args: ICreateInvestorArgsDTO[]
@@ -83,10 +34,10 @@ export const saveCompanyInvestors = async (
 
 export const getCompanyRealOwners = async (
 	companyId: number
-): Promise<IResponse<Record<string, number>>> => {
+): Promise<IResponse<ICompanyRealOwnersDTO[]>> => {
 	try {
 		const response = await axiosInstance.get(`/company/${companyId}/real-owners`);
-		return response.data as IResponse<Record<string, number>>;
+		return response.data as IResponse<ICompanyRealOwnersDTO[]>;
 	} catch (error) {
 		return { code: httpCodes.INTERNAL_SERVER_ERROR, data: null, error: error as string };
 	}

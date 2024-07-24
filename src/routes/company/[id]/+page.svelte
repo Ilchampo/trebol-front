@@ -44,7 +44,7 @@
 				>
 				<button
 					class="btn btn-filled variant-filled-primary"
-					on:click={() => goto(`/company/client/${data.client?.id ?? 0}`)}
+					on:click={() => goto(`/client/${data.client?.id ?? 0}/company`)}
 					>Ver todas las Empresas</button
 				>
 			</div>

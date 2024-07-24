@@ -2,9 +2,11 @@
 	import type { IInvestorDTO } from '$lib/interfaces/investor.interface';
 	import type { IPageResponse } from './+page.server';
 
-	import Icon from '$lib/components/Icon.svelte';
 	import { writable } from 'svelte/store';
 	import { page } from '$app/stores';
+	import { goto } from '$app/navigation';
+
+	import Icon from '$lib/components/Icon.svelte';
 	import Loader from '$lib/components/Loader.svelte';
 
 	export let data: IPageResponse;
@@ -14,9 +16,6 @@
 	let companyName = '';
 	let companyCode = '';
 	let currentLevel = 0;
-	let validForm = false;
-
-	const validateCompany = (): boolean => companyName.length > 0 && companyCode.length > 0;
 
 	const investors = writable<IInvestorDTO[]>([
 		{
@@ -99,45 +98,31 @@
 		return maxLevel;
 	};
 
-	const validateForm = (): boolean => {
-		// Check if the minimum level is reached
-		if (currentLevel < (data.client?.maxInvestorLevels ?? 100)) {
-			// Check if all subinvestors end with a person
-			const allEndWithPerson = $investors.every((investor) => {
-				const children = $investors.filter((i) => i.parentInvestorId === investor.id);
-				return children.length === 0 || children.every((child) => child.type === 'person');
+	const clientId = data.client?.id ?? parseInt($page.params.id);
+
+	const saveInvestors = async () => {
+		const company = {
+			name: companyName,
+			code: companyCode
+		};
+
+		try {
+			const response = await fetch(`/register`, {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json'
+				},
+				body: JSON.stringify({ clientId, company, investors: $investors })
 			});
 
-			if (!allEndWithPerson) {
-				return false;
-			}
+			goto('/');
+		} catch (error) {
+			throw error;
 		}
-
-		// Check if all fields are populated correctly
-		const allFieldsPopulated = $investors.every((investor) => {
-			return (
-				investor.name.trim() !== '' && investor.code.trim() !== '' && investor.sharePercentage > 0
-			);
-		});
-
-		if (!allFieldsPopulated) {
-			return false;
-		}
-
-		return true;
 	};
 
 	const onClickSaveCompany = async (): Promise<any> => {
-		const test = validateForm();
-		console.log('test', test);
-
-		if (!validForm) {
-			alert('Form is not valid. Please check the required fields and levels.');
-			return;
-		}
-
-		// Add the logic to save the company here
-		console.log('called');
+		await saveInvestors();
 	};
 </script>
 
@@ -265,7 +250,7 @@
 				{/each}
 			</div>
 			<div class="flex w-full justify-end items-center">
-				<button class="btn variant-filled-primary w-64" on:click={() => validateForm()}
+				<button class="btn variant-filled-primary w-64" on:click={() => onClickSaveCompany()}
 					>Registrar</button
 				>
 			</div>

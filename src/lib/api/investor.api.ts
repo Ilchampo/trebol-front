@@ -1,7 +1,5 @@
 import type {
 	IInvestorDTO,
-	ICreateInvestorArgsDTO,
-	IUpdateInvestorArgsDTO,
 	ICompanyRealOwnersDTO
 } from '$lib/interfaces/investor.interface';
 import type { IResponse } from '$lib/interfaces/response.interface';
@@ -21,11 +19,12 @@ const axiosInstance = axios.create({
 });
 
 export const saveCompanyInvestors = async (
-	companyId: number,
-	args: ICreateInvestorArgsDTO[]
+	clientId: number,
+	company: Record<string, string>,
+	investors: IInvestorDTO[]
 ): Promise<IResponse<IInvestorDTO[]>> => {
 	try {
-		const response = await axiosInstance.post(`/company/${companyId}`, args);
+		const response = await axiosInstance.post(`/company/${clientId}`, { company, investors });
 		return response.data as IResponse<IInvestorDTO[]>;
 	} catch (error) {
 		return { code: httpCodes.INTERNAL_SERVER_ERROR, data: null, error: error as string };

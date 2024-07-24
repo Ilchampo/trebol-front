@@ -1,12 +1,12 @@
-import type { ICompanyDTO } from '$lib/interfaces/company.interface';
+import type { IClientDTO } from '$lib/interfaces/client.interface';
 import type { Load } from '@sveltejs/kit';
 
+import { getClientById } from '$lib/api/client.api';
 import httpCodes from '$lib/constants/httpCodes';
-import { getCompaniesByClientId } from '$lib/api/company.api';
 
 export interface IPageResponse {
 	loading: boolean;
-	companies: ICompanyDTO[];
+	client: IClientDTO | null;
 	code: number;
 	error: unknown;
 }
@@ -18,25 +18,25 @@ export const load: Load = async ({ params }) => {
 		return {
 			loading: false,
 			code: httpCodes.BAD_REQUEST,
-			companies: [],
-			error: new Error('No hay companias')
+			client: null,
+			error: new Error('Id de client incorrecto')
 		};
 	}
 
 	try {
-		const companies = await getCompaniesByClientId(Number(id));
+		const client = await getClientById(parseInt(id));
 
 		return {
 			loading: false,
-			code: companies.code,
-			companies: companies.data ?? [],
+			code: client.code,
+			client: client.data,
 			error: undefined
 		};
 	} catch (error) {
 		return {
 			loading: false,
 			code: httpCodes.INTERNAL_SERVER_ERROR,
-			companies: [],
+			client: null,
 			error: error as string
 		};
 	}

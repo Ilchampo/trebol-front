@@ -26,17 +26,19 @@ export const load: Load = async ({ params }) => {
 	try {
 		const companies = await getCompaniesByClientId(Number(id));
 
+        console.log(companies);
+
 		return {
 			loading: false,
 			code: companies.code,
-			companies: companies.data ?? [],
+			client: companies.data,
 			error: undefined
 		};
 	} catch (error) {
 		return {
 			loading: false,
 			code: httpCodes.INTERNAL_SERVER_ERROR,
-			companies: [],
+			client: [],
 			error: error as string
 		};
 	}

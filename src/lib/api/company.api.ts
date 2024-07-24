@@ -17,13 +17,9 @@ const axiosInstance = axios.create({
 
 export const getCompanyById = async (id: number): Promise<IResponse<ICompanyDTO>> => {
 	try {
-		const response = await axiosInstance.get('/', {
-			params: {
-				clientId: id
-			}
-		});
+		const response = await axiosInstance.get(`/${id}`);
 
-		return response.data?.[0] as IResponse<ICompanyDTO>;
+		return { code: response.status, data: response.data } as IResponse<ICompanyDTO>;
 	} catch (error) {
 		return { code: httpCodes.INTERNAL_SERVER_ERROR, data: null, error: error as string };
 	}
@@ -32,8 +28,17 @@ export const getCompanyById = async (id: number): Promise<IResponse<ICompanyDTO>
 export const getCompanies = async (): Promise<IResponse<ICompanyDTO[]>> => {
 	try {
 		const response = await axiosInstance.get('');
-		return response.data as IResponse<ICompanyDTO[]>;
+		return { code: response.status, data: response.data } as IResponse<ICompanyDTO[]>;
 	} catch (error) {
 		return { code: httpCodes.INTERNAL_SERVER_ERROR, data: null, error: error as string };
 	}
 };
+
+export const getCompaniesByClientId = async(id: number): Promise<IResponse<ICompanyDTO[]>> => {
+	try {
+		const response = await axiosInstance.get(`/client/${id}`);
+		return { code: response.status, data: response.data } as IResponse<ICompanyDTO[]>;
+	} catch (error) {
+		return { code: httpCodes.INTERNAL_SERVER_ERROR, data: null, error: error as string };
+	}
+}

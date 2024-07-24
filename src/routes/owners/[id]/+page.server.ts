@@ -12,10 +12,11 @@ export const load: Load = async ({ params }) => {
 		};
 	}
 	const company = await getCompanyById(parseInt(id));
+
 	const realOwners = await getCompanyRealOwners(parseInt(id));
 
 	return {
-		company,
+		company: company.data,
 		realOwners
 	};
 };

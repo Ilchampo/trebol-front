@@ -1,7 +1,23 @@
 import type { IInvestorDTO } from '$lib/interfaces/investor.interface';
 
+export const getEmptyInvestorValue = (
+	id?: number,
+	subInvestor?: number,
+	length = 0,
+	companyId = 1
+): IInvestorDTO => ({
+	id: id ?? length,
+	companyId,
+	sharePercentage: 0,
+	name: '',
+	code: '',
+	type: 'person',
+	parentInvestorId: subInvestor ?? null
+});
+
 export const calculateLevels = (investors: IInvestorDTO[]): number => {
 	let maxLevel = 0;
+
 	const traverse = (parentId: number | null, level: number): void => {
 		const children = investors.filter((investor) => investor.parentInvestorId === parentId);
 		if (children.length > 0) {
@@ -10,31 +26,56 @@ export const calculateLevels = (investors: IInvestorDTO[]): number => {
 			children.forEach((child) => traverse(child.id, level));
 		}
 	};
+
 	traverse(null, 0);
 	return maxLevel;
 };
 
-export const validateForm = (
+export const validateInvestorLevel = (
 	investors: IInvestorDTO[],
 	currentLevel: number,
-	maxLevels: number | undefined
+	maxInvestorLevels: number
 ): boolean => {
-	if (currentLevel < (maxLevels ?? 100)) {
-		const allEndWithPerson = investors.every((investor) => {
-			const children = investors.filter((i) => i.parentInvestorId === investor.id);
-			return children.length === 0 || children.every((child) => child.type === 'person');
+	if (currentLevel > maxInvestorLevels) return false;
+
+	const allEndWithPerson = investors.every((investor) => {
+		const children = investors.filter((i) => i.parentInvestorId === investor.id);
+		return children.length === 0 || children.every((child) => child.type === 'person');
+	});
+
+	if (currentLevel < maxInvestorLevels && !allEndWithPerson) return false;
+
+	return true;
+};
+
+export const validatePercentageAdded = (
+	investors: IInvestorDTO[],
+	minSearchPercentage: number
+): boolean => {
+	const traverse = (parentId: number | null): number => {
+		const children = investors.filter((investor) => investor.parentInvestorId === parentId);
+		let totalPercentage = 0;
+
+		children.forEach((child) => {
+			if (child.type === 'company') {
+				totalPercentage += child.sharePercentage;
+				const subInvestorPercentage = traverse(child.id);
+				if (subInvestorPercentage < minSearchPercentage) {
+					return false;
+				}
+			}
 		});
-		if (!allEndWithPerson) {
-			return false;
-		}
-	}
-	const allFieldsPopulated = investors.every((investor) => {
+
+		return totalPercentage;
+	};
+
+	return traverse(null) >= minSearchPercentage;
+};
+
+export const validateSubinvestorInformation = (investors: IInvestorDTO[]): boolean => {
+	return investors.every((investor) => {
 		return (
 			investor.name.trim() !== '' && investor.code.trim() !== '' && investor.sharePercentage > 0
 		);
 	});
-	if (!allFieldsPopulated) {
-		return false;
-	}
-	return true;
 };

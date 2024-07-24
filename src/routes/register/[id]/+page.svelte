@@ -2,46 +2,57 @@
 	import type { IInvestorDTO } from '$lib/interfaces/investor.interface';
 	import type { IPageResponse } from './+page.server';
 
-	import { writable } from 'svelte/store';
+	import {
+		calculateLevels,
+		getEmptyInvestorValue,
+		validateInvestorLevel,
+		validatePercentageAdded,
+		validateSubinvestorInformation
+	} from '$lib/utils/registerForm.utils';
+	import { investors } from '$lib/stores/investors.store';
+	import { onMount } from 'svelte';
 	import { page } from '$app/stores';
 	import { goto } from '$app/navigation';
 
 	import Icon from '$lib/components/Icon.svelte';
 	import Loader from '$lib/components/Loader.svelte';
+	import RegisterClientBanner from '$lib/components/RegisterClientBanner.svelte';
+	import RegisterInformation from '$lib/components/RegisterInformation.svelte';
 
 	export let data: IPageResponse;
 
-	let isLoading = data.loading ?? true;
+	const clientId = data.client?.id ?? parseInt($page.params.id);
 
+	let isLoading = data.loading ?? true;
 	let companyName = '';
 	let companyCode = '';
 	let currentLevel = 0;
 
-	const investors = writable<IInvestorDTO[]>([
-		{
-			id: 0,
-			companyId: data.client?.id ?? parseInt($page.params.id),
-			sharePercentage: 0,
-			name: '',
-			code: '',
-			type: 'person',
-			parentInvestorId: null
-		}
-	]);
-
-	const getEmptyInvestorValue = (id?: number, subInvestor?: number): IInvestorDTO => ({
-		id: id ?? $investors[$investors.length - 1]?.id + 1 ?? 0,
-		companyId: data.client?.id ?? parseInt($page.params.id),
-		sharePercentage: 0,
-		name: '',
-		code: '',
-		type: 'person',
-		parentInvestorId: subInvestor ?? null
+	onMount(() => {
+		investors.update(() => [
+			{
+				id: 0,
+				companyId: clientId,
+				sharePercentage: 0,
+				name: '',
+				code: '',
+				type: 'person',
+				parentInvestorId: null
+			}
+		]);
 	});
 
 	const addNewInvestor = (): void => {
 		investors.update((current) => {
-			const updatedInvestors = [...current, getEmptyInvestorValue()];
+			const updatedInvestors = [
+				...current,
+				getEmptyInvestorValue(
+					undefined,
+					undefined,
+					$investors[$investors.length - 1]?.id + 1,
+					clientId
+				)
+			];
 			currentLevel = calculateLevels(updatedInvestors);
 			return updatedInvestors;
 		});
@@ -75,39 +86,51 @@
 	const addNewSubInvestor = (index: number): void => {
 		investors.update((current) => {
 			const parentInvestor = current[index];
-			const newSubInvestor = getEmptyInvestorValue(undefined, parentInvestor.id);
+			const newSubInvestor = getEmptyInvestorValue(
+				undefined,
+				parentInvestor.id,
+				$investors[$investors.length - 1]?.id + 1,
+				clientId
+			);
 			const updatedInvestors = [...current, newSubInvestor];
 			currentLevel = calculateLevels(updatedInvestors);
 			return updatedInvestors;
 		});
 	};
 
-	const calculateLevels = (investors: IInvestorDTO[]): number => {
-		let maxLevel = 0;
+	const validateForm = (): boolean => {
+		if (companyCode.length <= 0 || companyName.length <= 0) {
+			return false;
+		}
 
-		const traverse = (parentId: number | null, level: number): void => {
-			const children = investors.filter((investor) => investor.parentInvestorId === parentId);
-			if (children.length > 0) {
-				level += 1;
-				maxLevel = Math.max(maxLevel, level);
-				children.forEach((child) => traverse(child.id, level));
-			}
-		};
+		if (
+			!validateInvestorLevel($investors, currentLevel, data.client?.maxInvestorLevels ?? 100) ||
+			!validatePercentageAdded($investors, data.client?.minSearchPercentage ?? 0) ||
+			!validateSubinvestorInformation($investors)
+		) {
+			return false;
+		}
 
-		traverse(null, 0);
-		return maxLevel;
+		return true;
 	};
 
-	const clientId = data.client?.id ?? parseInt($page.params.id);
+	const onClickSaveCompany = async (): Promise<void> => {
+		const isValidForm = validateForm();
 
-	const saveInvestors = async () => {
+		if (!isValidForm) {
+			alert('Error en validacion de datos!');
+			return;
+		}
+
+		isLoading = true;
+
 		const company = {
 			name: companyName,
 			code: companyCode
 		};
 
 		try {
-			const response = await fetch(`/register`, {
+			await fetch(`/register`, {
 				method: 'POST',
 				headers: {
 					'Content-Type': 'application/json'
@@ -115,14 +138,12 @@
 				body: JSON.stringify({ clientId, company, investors: $investors })
 			});
 
+			isLoading = false;
+
 			goto('/');
 		} catch (error) {
 			throw error;
 		}
-	};
-
-	const onClickSaveCompany = async (): Promise<any> => {
-		await saveInvestors();
 	};
 </script>
 
@@ -131,37 +152,12 @@
 {:else}
 	<div class="flex flex-col h-full w-full">
 		<div class="card p-4 variant-soft-secondary flex flex-col gap-4">
-			<div class="flex gap-2">
-				<img
-					src={data.client?.logoUrl}
-					alt={data.client?.name}
-					class="w-10 h-10 rounded-tl-xl rounded-br-xl"
-				/>
-				<h2 class="h2">Registrar Empresa en {data.client?.name}</h2>
-			</div>
-			<div class="card">
-				<div class="table-container table-compact">
-					<table class="table">
-						<thead>
-							<tr>
-								<th>Nivel minimo declarable</th>
-								<th>Nivel actual declarado</th>
-								<th>Porcentaje minimo de accionista</th>
-							</tr>
-						</thead>
-						<tbody>
-							<tr>
-								<td>{data.client?.maxInvestorLevels} Niveles</td>
-								<td
-									>{currentLevel === 0 ? 1 : currentLevel}
-									{currentLevel === 1 || currentLevel + 1 === 1 ? 'Nivel' : 'Niveles'}</td
-								>
-								<td>{data.client?.minSearchPercentage} %</td>
-							</tr>
-						</tbody>
-					</table>
-				</div>
-			</div>
+			<RegisterClientBanner logoUrl={data.client?.logoUrl} name={data.client?.name} />
+			<RegisterInformation
+				{currentLevel}
+				maxInvestorLevels={data?.client?.maxInvestorLevels}
+				minSearchPercentage={data?.client?.minSearchPercentage}
+			/>
 			<div class="card flex p-4 gap-4">
 				<div class="flex gap-2 w-full">
 					<input

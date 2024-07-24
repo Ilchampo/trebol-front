@@ -103,13 +103,13 @@
 			return false;
 		}
 
-		if (
-			!validateInvestorLevel($investors, currentLevel, data.client?.maxInvestorLevels ?? 100) ||
-			!validatePercentageAdded($investors, data.client?.minSearchPercentage ?? 0) ||
-			!validateSubinvestorInformation($investors)
-		) {
-			return false;
-		}
+		// if (
+		// 	!validateInvestorLevel($investors, currentLevel, data.client?.maxInvestorLevels ?? 100) ||
+		// 	!validatePercentageAdded($investors, data.client?.minSearchPercentage ?? 0) ||
+		// 	!validateSubinvestorInformation($investors)
+		// ) {
+		// 	return false;
+		// }
 
 		return true;
 	};
